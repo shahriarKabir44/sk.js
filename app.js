@@ -56,7 +56,7 @@ function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = nu
         }
 
         else if (root.childNodes[n].nodeType == 1) {
-            renderValue(root.childNodes[n]);
+            renderValue(root.childNodes[n], iteratorName, iteratorObject);
         }
     }
 
