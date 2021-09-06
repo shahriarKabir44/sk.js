@@ -28,19 +28,20 @@ function findNodesWithAttr(node, res, query) {
 
 var appRoot = [];
 findNodesWithAttr(bodyEl, appRoot, 'sk-app');
-console.log(appRoot);
 
 var scope = {};
-scope.myVar = "abcd";
+scope.myVar = "shahriar";
 scope.name = "efwefewfeg";
+scope.datas = [1, 2, 34, 5]
 /**
  * 
  * @param {Node} root 
  */
 function renderValue(root = appRoot[0]) {
-    if (findAttr(root, 'sk-repeat')) {
-        var prop = findAttr(root, 'sk-repeat');
-
+    if (findAttr(root, 'sk-loop')) {
+        var prop = findAttr(root, 'sk-loop');
+        renderLoop(root, prop)
+        return
     }
     for (let n in root.childNodes) {
         if (root.childNodes[n].nodeType == 3) {
@@ -54,6 +55,7 @@ function renderValue(root = appRoot[0]) {
 
 }
 
+
 /**
  * 
  * @param {Node} root 
@@ -61,13 +63,14 @@ function renderValue(root = appRoot[0]) {
  */
 function renderLoop(root, prop) {
     var [iter, src] = prop.split(',');
-    var innerTx = root.innerHTML
+    let innerTx = root.innerHTML
     root.innerHTML = ""
     var dataList = scope[src]
     var lnt = dataList.length
     for (let n = 0; n < lnt; n++) {
         root.innerHTML += innerTx
     }
+
 }
 
 function gtl(x) {
@@ -78,7 +81,7 @@ function gtl(x) {
  * 
  * @param {string} s 
  */
-function extractInterpolation(s, scope) {
+function extractInterpolation(s, scope, iteratorName = null, iteratorObject = null) {
     var start1 = -1;
     var start2 = -1;
     var end1 = -1;
@@ -97,10 +100,20 @@ function extractInterpolation(s, scope) {
             if (end1 == -1) end1 = n;
             else if (end1 == n - 1) {
                 end2 = n;
-                var data = scope[tempProp];
-                if (tempProp.split('.').length > 1) {
-                    tempProp = tempProp.split('.')[1];
+                var data = null
+                var tempPropSplit = tempProp.split('.')
+                var property
+                if (tempProp[0] == iteratorName) {
+                    property = iteratorObject
                 }
+                else {
+                    property = scope
+                }
+                for (let n = 1; n < tempPropSplit.length; n++) {
+                    property = property[tempPropSplit[n]]
+                }
+                data = typeof (scope) == 'object' ? scope[tempProp] : scope;
+                console.log(scope);
                 if (data) {
                     tempst += data
                 }
