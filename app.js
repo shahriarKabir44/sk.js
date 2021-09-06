@@ -32,20 +32,27 @@ findNodesWithAttr(bodyEl, appRoot, 'sk-app');
 var scope = {};
 scope.myVar = "shahriar";
 scope.name = "efwefewfeg";
-scope.datas = [1, 2, 34, 5]
+scope.datas = [
+    { name: "www", "roll": 44 },
+    { name: "www1", "roll": 441 },
+    { name: "www2", "roll": 442 }
+]
 /**
  * 
  * @param {Node} root 
  */
-function renderValue(root = appRoot[0]) {
+function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = null) {
     if (findAttr(root, 'sk-loop')) {
         var prop = findAttr(root, 'sk-loop');
         renderLoop(root, prop)
         return
     }
+    if (root.nodeType == 3) {
+        root.textContent = extractInterpolation(root.textContent, scope, iteratorName, iteratorObject);
+    }
     for (let n in root.childNodes) {
         if (root.childNodes[n].nodeType == 3) {
-            root.childNodes[n].textContent = extractInterpolation(root.childNodes[n].textContent, scope);
+            root.childNodes[n].textContent = extractInterpolation(root.childNodes[n].textContent, scope, iteratorName, iteratorObject);
         }
 
         else if (root.childNodes[n].nodeType == 1) {
@@ -68,13 +75,27 @@ function renderLoop(root, prop) {
     var dataList = scope[src]
     var lnt = dataList.length
     for (let n = 0; n < lnt; n++) {
-        root.innerHTML += innerTx
+        var iteratorName = iter
+        var iteratorObject = dataList[n]
+        var temporaryContainer = document.createElement('div')
+        temporaryContainer.innerHTML = innerTx
+        root.appendChild(temporaryContainer)
+        renderValue(temporaryContainer, iteratorName, iteratorObject)
     }
-
 }
 
 function gtl(x) {
     return document.getElementById(x)
+}
+/**
+ * 
+ * @param {Node} node 
+ */
+function copyNode(node) {
+    var newNode = document.createElement(node.nodeName)
+    newNode.attributes = node.attributes
+    newNode.innerHTML = node.innerHTML
+    return newNode
 }
 
 /**
@@ -92,33 +113,43 @@ function extractInterpolation(s, scope, iteratorName = null, iteratorObject = nu
     var isPropSelecting = 0;
     var tempProp = '';
     for (let n = 0; n < s.length; n++) {
+        if (s[n] == '\n') {
+            continue
+        }
         if (s[n] == '{') {
             if (start1 == -1) start1 = n;
             else if (start1 == n - 1) { start2 = n; isPropSelecting = 1; }
         }
         else if (s[n] == '}' && start2 != -1) {
             if (end1 == -1) end1 = n;
-            else if (end1 == n - 1) {
+            else if (n && end1 == n - 1) {
                 end2 = n;
+                console.log(tempProp);
                 var data = null
                 var tempPropSplit = tempProp.split('.')
                 var property
-                if (tempProp[0] == iteratorName) {
+                if (tempPropSplit[0] == iteratorName) {
                     property = iteratorObject
+                    for (let n = 1; n < tempPropSplit.length; n++) {
+                        property = property[tempPropSplit[n]]
+                    }
                 }
                 else {
                     property = scope
+                    for (let n = 0; n < tempPropSplit.length; n++) {
+                        property = property[tempPropSplit[n]]
+                    }
                 }
-                for (let n = 1; n < tempPropSplit.length; n++) {
-                    property = property[tempPropSplit[n]]
-                }
-                data = typeof (scope) == 'object' ? scope[tempProp] : scope;
-                console.log(scope);
+
+                data = property
                 if (data) {
                     tempst += data
                 }
                 isPropSelecting = 0
                 tempProp = ""
+                start1 = -1
+                end1 = -1
+
             }
             else {
                 tempProp = ""

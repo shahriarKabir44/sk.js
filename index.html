@@ -10,20 +10,20 @@
 
 <body id="root">
     <div sk-app="myApp">
-        <div id="abcd" custom-prop="abcd">
+        <div id="abcd" class="a b c" custom-prop="abcd">
             abcd
 
             <p>
             <h1>d</h1>
             </p>
             <h3>
-                {{name}}
+                {{name}} {{name}}
             </h3>
             {{myVar}}
         </div>
 
         <div sk-loop="data,datas">
-            c {{data}} c
+            c {{data.name}} d= {{data.roll}}
         </div>
 
     </div>
