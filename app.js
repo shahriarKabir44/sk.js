@@ -59,11 +59,14 @@ function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = nu
         return
     }
     if (root.nodeType == 3) {
-        root.textContent = extractInterpolation(root.textContent, scope, iteratorName, iteratorObject);
+
+        let st = extractInterpolation(root.textContent, scope, iteratorName, iteratorObject);
+        root.textContent = st
     }
     for (let n in root.childNodes) {
         if (root.childNodes[n].nodeType == 3) {
-            root.childNodes[n].textContent = extractInterpolation(root.childNodes[n].textContent, scope, iteratorName, iteratorObject);
+            let st = extractInterpolation(root.childNodes[n].textContent, scope, iteratorName, iteratorObject);
+            root.childNodes[n].textContent = st
         }
 
         else if (root.childNodes[n].nodeType == 1) {
@@ -81,12 +84,14 @@ function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = nu
 function processDOMs(currentNode, context) {
     console.log(context)
     if (currentNode.nodeType == 3) {
-        currentNode.textContent = extractInterpolation(currentNode.textContent, context)
+        let st = extractInterpolation(currentNode.textContent, context)
+        currentNode.textContent = st
     }
     else {
         for (let n = 0; n < currentNode.childNodes.length; n++) {
             if (currentNode.childNodes[n].nodeType == 3) {
-                currentNode.childNodes[n].textContent = extractInterpolation(currentNode.childNodes[n].textContent, context)
+                let st = extractInterpolation(currentNode.childNodes[n].textContent, context)
+                currentNode.childNodes[n].textContent = st
             }
             else {
                 var tempNode = currentNode.childNodes[n]
@@ -125,11 +130,8 @@ function renderRepeat(root, context, childIndex) {
         if (n == childIndex) {
             for (let k = 0; k < loopCount; k++) {
                 let newNode = (copyNode(root))
-                let currentContext = {
-                    indexNumber: k,
-                    iteratorName: iterator,
-                    iteratorValue: dataArray[k]
-                }
+                let currentContext = [{ iteratorName: iterator, iteratorValue: dataArray[k], indexNumber: k }]
+                if (context.localContexts) currentContext = [...context.localContexts, ...currentContext]
                 if (!context.localContexts) context.localContexts = []
                 processDOMs(newNode, { ...context, localContexts: currentContext })
                 siblingList.push(newNode)
@@ -189,13 +191,16 @@ function findData(context, prop) {
     var splitProp = prop.split('.')
     var property = context
     if (!property[splitProp[0]]) {
-        if (context.localContexts.iteratorName == splitProp[0]) {
-            let currentContext = context.localContexts.iteratorValue
-            for (let n = 1; n < splitProp.length; n++) {
-                currentContext = currentContext[splitProp[n]]
+        for (let item of context.localContexts) {
+            if (item.iteratorName == splitProp[0]) {
+                let currentContext = item.iteratorValue
+                for (let n = 1; n < splitProp.length; n++) {
+                    currentContext = currentContext[splitProp[n]]
+                }
+                return currentContext
             }
-            return currentContext
         }
+
     }
     for (let n of splitProp) {
         property = property[n]
