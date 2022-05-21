@@ -3,7 +3,7 @@ var bodyEl = document.getElementsByTagName("body")[0];
  * 
  * @param {Node} node 
  * @param {string} prop 
- * @returns {boolean}
+ * @returns {boolean|string}
  */
 function findAttr(node, prop) {
     for (let n in node.attributes) {
@@ -12,6 +12,13 @@ function findAttr(node, prop) {
     }
     return false;
 }
+function deleteAttribute(node, prop) {
+    for (let n in node.attributes) {
+        if (node.attributes[n].name == prop)
+            delete node.attributes[n]
+    }
+}
+var positionTracker = new Map()
 
 /**
  * 
@@ -31,12 +38,15 @@ findNodesWithAttr(bodyEl, appRoot, 'sk-app');
 
 var scope = {};
 scope.myVar = "shahriar";
-scope.name = "efwefewfeg";
+scope.name = { value: "shahriarKabir" };
 scope.datas = [
     { name: "www", "roll": 44 },
     { name: "www1", "roll": 441 },
-    { name: "www2", "roll": 442 }
+    { name: "www2", "roll": 442 },
+    { name: "www22", "roll": 442 }
+
 ]
+scope.nums = [1, 2, 3]
 /**
  * 
  * @param {Node} root 
@@ -44,6 +54,7 @@ scope.datas = [
 function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = null) {
     if (findAttr(root, 'sk-loop')) {
         var prop = findAttr(root, 'sk-loop');
+
         renderLoop(root, prop)
         return
     }
@@ -62,6 +73,77 @@ function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = nu
 
 }
 
+/**
+ * 
+ * @param {Node} currentNode 
+ * @param {object} context 
+ */
+function processDOMs(currentNode, context) {
+    console.log(context)
+    if (currentNode.nodeType == 3) {
+        currentNode.textContent = extractInterpolation(currentNode.textContent, context)
+    }
+    else {
+        for (let n = 0; n < currentNode.childNodes.length; n++) {
+            if (currentNode.childNodes[n].nodeType == 3) {
+                currentNode.textContent = extractInterpolation(currentNode.textContent, context)
+            }
+            else {
+                var tempNode = currentNode.childNodes[n]
+                if (findAttr(tempNode, 'sk-loop')) {
+                    renderRepeat(tempNode, context, n)
+                }
+                else {
+                    processDOMs(tempNode, context)
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * 
+ * @param {Node} root 
+ */
+function renderRepeat(root, context, childIndex) {
+    var prop = findAttr(root, 'sk-loop') + ''
+    var [iterator, dataSource] = prop.split(',')
+    if (!positionTracker.get(dataSource)) positionTracker.set(dataSource, [])
+    var positionDetails = {
+        targetNode: root,
+        targetNodeIndex: childIndex,
+        parent: root.parentElement
+    }
+    positionTracker.set(dataSource, [...positionTracker.get(dataSource), positionDetails])
+    var dataArray = context[dataSource]
+    var loopCount = dataArray.length
+    var parentNode = root.parentElement;
+    deleteAttribute(root, 'sk-loop')
+    var siblingList = []
+    for (let n = 0; n < parentNode.childNodes.length; n++) {
+        if (n == childIndex) {
+            for (let k = 0; k < loopCount; k++) {
+                let newNode = (copyNode(root))
+                let currentContext = {
+                    indexNumber: k,
+                    iteratorName: iterator,
+                    iteratorValue: dataArray[k]
+                }
+                if (!context.localContexts) context.localContexts = []
+                processDOMs(newNode, { ...context, localContexts: currentContext })
+                siblingList.push(newNode)
+            }
+        }
+        else siblingList.push(parentNode.childNodes[n])
+    }
+    parentNode.innerHTML = ''
+    for (let n of siblingList) {
+        parentNode.appendChild(n)
+    }
+
+}
+renderRepeat(gtl('targ').childNodes[1], scope, 1)
 
 /**
  * 
@@ -97,7 +179,29 @@ function copyNode(node) {
     newNode.innerHTML = node.innerHTML
     return newNode
 }
-
+/**
+ * 
+ * @param {Object} context 
+ * @param {string} prop 
+ */
+function findData(context, prop) {
+    var splitProp = prop.split('.')
+    var property = context
+    if (!property[splitProp[0]]) {
+        if (context.localContexts.iteratorName == splitProp[0]) {
+            let currentContext = context.localContexts.iteratorValue
+            for (let n = 1; n < splitProp.length; n++) {
+                currentContext = currentContext[splitProp[n]]
+            }
+            return currentContext
+        }
+    }
+    for (let n of splitProp) {
+        property = property[n]
+    }
+    return property
+}
+//replaces placeholders with values
 /**
  * 
  * @param {string} s 
@@ -108,7 +212,7 @@ function extractInterpolation(s, scope, iteratorName = null, iteratorObject = nu
     var end1 = -1;
     var end2 = -1;
     var res = "";
-    var tempst = "";
+    var finalInnerString = "";
 
     var isPropSelecting = 0;
     var tempProp = '';
@@ -124,26 +228,13 @@ function extractInterpolation(s, scope, iteratorName = null, iteratorObject = nu
             if (end1 == -1) end1 = n;
             else if (n && end1 == n - 1) {
                 end2 = n;
-                console.log(tempProp);
-                var data = null
-                var tempPropSplit = tempProp.split('.')
-                var property
-                if (tempPropSplit[0] == iteratorName) {
-                    property = iteratorObject
-                    for (let n = 1; n < tempPropSplit.length; n++) {
-                        property = property[tempPropSplit[n]]
-                    }
-                }
-                else {
-                    property = scope
-                    for (let n = 0; n < tempPropSplit.length; n++) {
-                        property = property[tempPropSplit[n]]
-                    }
-                }
 
-                data = property
+                var data = null
+
+                data = findData(scope, tempProp)
                 if (data) {
-                    tempst += data
+                    finalInnerString += (data)
+                    console.log(tempProp, data);
                 }
                 isPropSelecting = 0
                 tempProp = ""
@@ -158,12 +249,12 @@ function extractInterpolation(s, scope, iteratorName = null, iteratorObject = nu
         }
         else {
             if (isPropSelecting) tempProp += s[n]
-            else tempst += s[n];
+            else finalInnerString += s[n];
         }
 
 
     }
-    return tempst
+    return finalInnerString
 }
 
-renderValue()
+//renderValue()

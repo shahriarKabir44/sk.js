@@ -9,25 +9,12 @@
 </head>
 
 <body id="root">
-    <div sk-app="myApp">
-        <div id="abcd" class="a b c" custom-prop="abcd">
-            abcd
-
-            <p>
-            <h1>d</h1>
-            </p>
-            <h3>
-                {{name}} {{name}}
-            </h3>
-            {{myVar}}
-        </div>
-
+    <div sk-app="myApp" id="targ">
+        ee
         <div sk-loop="data,datas">
-            c {{data.name}} d= <h1>
-                {{data.roll}}
-            </h1>
+            {{data.name}}--{{data.roll}}
         </div>
-
+        ee
     </div>
 </body>
 <script src="./app.js">
