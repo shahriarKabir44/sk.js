@@ -1,7 +1,7 @@
 var bodyEl = document.getElementsByTagName("body")[0];
 /**
  * 
- * @param {Node} node 
+ * @param {HTMLElement} node 
  * @param {string} prop 
  * @returns {boolean|string}
  */
@@ -22,8 +22,8 @@ var positionTracker = new Map()
 
 /**
  * 
- * @param {Node} node 
- * @param {Node[]} res 
+ * @param {HTMLElement} node 
+ * @param {HTMLElement[]} res 
  * @param {string} query 
  */
 function findNodesWithAttr(node, res, query) {
@@ -47,42 +47,14 @@ scope.datas = [
 
 ]
 scope.nums = [1, 2]
-/**
- * 
- * @param {Node} root 
- */
-function renderValue(root = appRoot[0], iteratorName = null, iteratorObject = null) {
-    if (findAttr(root, 'sk-loop')) {
-        var prop = findAttr(root, 'sk-loop');
 
-        renderLoop(root, prop)
-        return
-    }
-    if (root.nodeType == 3) {
-
-        let st = extractInterpolation(root.textContent, scope, iteratorName, iteratorObject);
-        root.textContent = st
-    }
-    for (let n in root.childNodes) {
-        if (root.childNodes[n].nodeType == 3) {
-            let st = extractInterpolation(root.childNodes[n].textContent, scope, iteratorName, iteratorObject);
-            root.childNodes[n].textContent = st
-        }
-
-        else if (root.childNodes[n].nodeType == 1) {
-            renderValue(root.childNodes[n], iteratorName, iteratorObject);
-        }
-    }
-
-}
 
 /**
  * 
- * @param {Node} currentNode 
+ * @param {HTMLElement} currentNode 
  * @param {object} context 
  */
 function processDOMs(currentNode, context) {
-    console.log(context)
     if (currentNode.nodeType == 3) {
         let st = extractInterpolation(currentNode.textContent, context)
         currentNode.textContent = st
@@ -109,7 +81,7 @@ function processDOMs(currentNode, context) {
 
 /**
  * 
- * @param {Node} root 
+ * @param {HTMLElement} root 
  */
 function renderRepeat(root, context, childIndex) {
     var prop = findAttr(root, 'sk-loop') + ''
@@ -149,24 +121,10 @@ renderRepeat(gtl('targ').childNodes[1], scope, 1)
 
 /**
  * 
- * @param {Node} root 
+ * @param {HTMLElement} root 
  * @param {string} prop 
  */
-function renderLoop(root, prop) {
-    var [iter, src] = prop.split(',');
-    let innerTx = root.innerHTML
-    root.innerHTML = ""
-    var dataList = scope[src]
-    var lnt = dataList.length
-    for (let n = 0; n < lnt; n++) {
-        var iteratorName = iter
-        var iteratorObject = dataList[n]
-        var temporaryContainer = document.createElement('div')
-        temporaryContainer.innerHTML = innerTx
-        root.appendChild(temporaryContainer)
-        renderValue(temporaryContainer, iteratorName, iteratorObject)
-    }
-}
+
 
 function gtl(x) {
     return document.getElementById(x)
@@ -177,9 +135,13 @@ function gtl(x) {
  */
 function copyNode(node) {
     var newNode = document.createElement(node.nodeName)
+    for (let style of node.style) {
+
+        newNode.style[style] = node.style[style]
+    }
     newNode.attributes = node.attributes
     newNode.innerHTML = node.innerHTML
-    newNode.style = node.style
+    // newNode.style = node.style
     return newNode
 }
 /**
@@ -240,7 +202,6 @@ function extractInterpolation(s, scope, iteratorName = null, iteratorObject = nu
                 data = findData(scope, tempProp)
                 if (data) {
                     finalInnerString += (data)
-                    console.log(tempProp, data);
                 }
                 isPropSelecting = 0
                 tempProp = ""
