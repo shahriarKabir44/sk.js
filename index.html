@@ -8,11 +8,16 @@
     <title>Document</title>
 </head>
 
-<body id="root">
+<body id="root"> 
     <div sk-app="myApp" id="targ">
         ee
         <div sk-loop="data,datas">
-            {{data.name}}--{{data.roll}}
+            <p>   {{data.name}} </p>
+         
+            <div sk-loop="num,nums">
+                {{num}}
+            </div>
+            
         </div>
         ee
     </div>

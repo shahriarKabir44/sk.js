@@ -46,7 +46,7 @@ scope.datas = [
     { name: "www22", "roll": 442 }
 
 ]
-scope.nums = [1, 2, 3]
+scope.nums = [1, 2]
 /**
  * 
  * @param {Node} root 
@@ -86,7 +86,7 @@ function processDOMs(currentNode, context) {
     else {
         for (let n = 0; n < currentNode.childNodes.length; n++) {
             if (currentNode.childNodes[n].nodeType == 3) {
-                currentNode.textContent = extractInterpolation(currentNode.textContent, context)
+                currentNode.childNodes[n].textContent = extractInterpolation(currentNode.childNodes[n].textContent, context)
             }
             else {
                 var tempNode = currentNode.childNodes[n]
@@ -171,12 +171,13 @@ function gtl(x) {
 }
 /**
  * 
- * @param {Node} node 
+ * @param {HTMLElement} node 
  */
 function copyNode(node) {
     var newNode = document.createElement(node.nodeName)
     newNode.attributes = node.attributes
     newNode.innerHTML = node.innerHTML
+    newNode.style = node.style
     return newNode
 }
 /**
